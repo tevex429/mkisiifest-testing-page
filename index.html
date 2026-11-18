@@ -12,11 +12,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link href="https://gusiifest.com/GusiiFest-icon.png" rel="icon shortcut" type="image/x-icon">
 
-  <!-- =========================================
-       PAYSTACK INLINE SDK
-       ========================================= -->
-  <script src="https://js.paystack.co/v1/inline.js"></script>
-
   <style>
     /* =========================================
        ORIGINAL STYLES
@@ -325,11 +320,21 @@
     }
     .form-group input::placeholder { color: #557a63; }
     .form-group input:focus { border-color: var(--gold); }
+    .form-group input.invalid { border-color: #ff6b6b; }
 
     .error-msg {
       color: #ff6b6b; font-size: 0.75rem; margin-top: 6px; display: none;
     }
     .error-msg.show { display: block; }
+
+    .optional-tag {
+      color: #7a8f7a; font-size: 0.65rem; font-weight: 600;
+      text-transform: none; letter-spacing: 0; margin-left: 6px;
+    }
+    .required-tag {
+      color: #f4c43c; font-size: 0.6rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.5px; margin-left: 6px;
+    }
 
     .summary-card {
       background: rgba(0,0,0,.2); border: 1px solid rgba(244,196,60,.2); border-radius: 8px;
@@ -354,26 +359,6 @@
     }
     .summary-empty { color: var(--muted); font-size: 0.9rem; font-style: italic; }
 
-    .payment-option {
-      display: flex; align-items: center; gap: 12px;
-      background: rgba(0,0,0,.2); border: 2px solid rgba(244,196,60,.2);
-      border-radius: 8px; padding: 16px; margin-bottom: 10px;
-      cursor: pointer; transition: 0.15s;
-    }
-    .payment-option:hover { border-color: rgba(244,196,60,.5); }
-    .payment-option.selected { border-color: var(--gold); background: rgba(244,196,60,.05); }
-    .payment-option .radio-dot {
-      width: 20px; height: 20px; border-radius: 50%;
-      border: 2px solid #5f7a5f; display: flex; align-items: center;
-      justify-content: center; flex-shrink: 0;
-    }
-    .payment-option.selected .radio-dot { border-color: var(--gold); }
-    .payment-option.selected .radio-dot::after {
-      content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--gold);
-    }
-    .payment-option .pay-icon { font-size: 1.4rem; color: var(--gold); width: 30px; text-align: center; }
-    .payment-option .pay-label { font-weight: 700; font-size: 0.95rem; color: #fff; }
-
     .success-screen { text-align: center; padding: 30px 10px; }
     .success-screen .check-circle {
       width: 90px; height: 90px; border-radius: 50%;
@@ -383,6 +368,30 @@
     }
     .success-screen h2 { color: #fff; font-size: 1.8rem; margin-bottom: 8px; font-family: "Playfair Display"; }
     .success-screen p { color: var(--muted); font-size: 0.95rem; margin-bottom: 24px; }
+
+    /* Paystack button style */
+    .paystack-btn {
+      width: 100%;
+      background: #0ba4db; /* Paystack blue */
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 18px;
+      font-weight: 900;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: 0.2s;
+      box-shadow: 0 8px 20px rgba(11, 164, 219, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .paystack-btn:hover { background: #0993c4; }
+    .paystack-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+    .paystack-btn i { font-size: 1.3rem; }
 
     /* Responsive */
     @media(max-width:780px){
@@ -517,94 +526,64 @@
     </section>
 
     <!-- =========================================
-         TICKETING & CHECKOUT FLOW
+         TICKETING SECTION (Paystack only)
          ========================================= -->
     <div class="ticketing-section" id="ticketing">
       
-      <!-- PAGE 1: SELECTION -->
+      <!-- PAGE 1: SELECTION + DETAILS -->
       <div id="page-tickets" class="page-view active">
         <h2 class="step-title">Select Your Tickets</h2>
         <p class="step-sub">Choose your experience for the Crossover & New Year.</p>
         <div class="ticket-list" id="ticketList"></div>
-        <div class="book-section">
-          <button class="book-btn" id="proceedBtn" disabled>BOOK TICKETS</button>
-          <div class="terms">
-            By continuing, you agree to our <a href="#">terms and conditions</a><br>
-            * Tickets once purchased cannot be refunded.
-          </div>
-        </div>
-      </div>
 
-      <!-- PAGE 2: DETAILS -->
-      <div id="page-details" class="page-view">
-        <a class="back-link" onclick="goToPage('tickets')">
-          <i class="fas fa-arrow-left"></i> Back to tickets
-        </a>
-        <h2 class="step-title" style="text-align:left; margin-bottom: 5px;">Your Details</h2>
-        <p class="step-sub" style="text-align:left; margin-bottom: 20px;">Tell us who the tickets are for. All fields are required.</p>
-        <form id="detailsForm" novalidate>
+        <!-- Customer details: name, phone, ID required; Gmail optional -->
+        <div class="summary-card" style="margin-top: 24px;">
+          <h3>Your Details</h3>
           <div class="form-group">
-            <label for="fullName">Full Name</label>
+            <label for="fullName">Full Name <span class="required-tag">required</span></label>
             <input type="text" id="fullName" placeholder="e.g. John Doe" autocomplete="name" />
             <div class="error-msg" id="err-name">Please enter your full name.</div>
           </div>
           <div class="form-group">
-            <label for="email">Email Address</label>
-            <input type="email" id="email" placeholder="you@example.com" autocomplete="email" />
-            <div class="error-msg" id="err-email">Please enter a valid email address.</div>
-          </div>
-          <div class="form-group">
-            <label for="phone">Phone Number</label>
+            <label for="phone">Phone Number <span class="required-tag">required</span></label>
             <input type="tel" id="phone" placeholder="+254 740 852 638" autocomplete="tel" />
             <div class="error-msg" id="err-phone">Please enter a valid phone number.</div>
           </div>
-          <div class="summary-card" id="detailsSummary"></div>
-          <button type="submit" class="book-btn">CONTINUE TO CHECKOUT</button>
-        </form>
+          <div class="form-group">
+            <label for="idNumber">ID Number <span class="required-tag">required</span></label>
+            <input type="text" id="idNumber" placeholder="e.g. 12345678" />
+            <div class="error-msg" id="err-id">Please enter your ID number.</div>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label for="email">Gmail / Email <span class="optional-tag">optional</span></label>
+            <input type="email" id="email" placeholder="you@gmail.com" autocomplete="email" />
+            <div class="error-msg" id="err-email">Please enter a valid email address.</div>
+          </div>
+        </div>
+
+        <div class="book-section">
+          <button class="paystack-btn" id="paystackBtn" disabled>
+            <i class="fas fa-lock"></i> PAY WITH PAYSTACK
+          </button>
+          <div class="terms">
+            By continuing, you agree to our <a href="#">terms and conditions</a><br>
+            * Tickets once purchased cannot be refunded. Secure payment via Paystack.
+          </div>
+        </div>
       </div>
 
-      <!-- PAGE 3: CHECKOUT -->
-      <div id="page-checkout" class="page-view">
-        <a class="back-link" onclick="goToPage('details')">
-          <i class="fas fa-arrow-left"></i> Back to details
-        </a>
-        <h2 class="step-title" style="text-align:left; margin-bottom: 5px;">Checkout</h2>
-        <p class="step-sub" style="text-align:left; margin-bottom: 20px;">Review your order and choose a payment method.</p>
-        <div class="summary-card" id="checkoutSummary"></div>
-        <h3 style="font-size:0.8rem; text-transform:uppercase; letter-spacing:1px; color:var(--gold); margin-bottom:12px;">Payment Method</h3>
-        <div class="payment-option selected" data-method="M-Pesa" onclick="selectPayment(this)">
-          <div class="radio-dot"></div>
-          <div class="pay-icon"><i class="fas fa-mobile-alt"></i></div>
-          <div class="pay-label">M-Pesa (Paybill 7408526)</div>
-        </div>
-        <div class="payment-option" data-method="Card" onclick="selectPayment(this)">
-          <div class="radio-dot"></div>
-          <div class="pay-icon"><i class="fas fa-credit-card"></i></div>
-          <div class="pay-label">Credit / Debit Card</div>
-        </div>
-        <div class="payment-option" data-method="Cash" onclick="selectPayment(this)">
-          <div class="radio-dot"></div>
-          <div class="pay-icon"><i class="fas fa-money-bill-wave"></i></div>
-          <div class="pay-label">Pay at the Gate (Cash)</div>
-        </div>
-        <button class="book-btn" style="margin-top:22px;" id="payBtn" onclick="completePurchase()">
-          PAY NOW
-        </button>
-        <div class="terms" style="margin-top:16px;">* Tickets once purchased cannot be refunded.</div>
-      </div>
-
-      <!-- PAGE 4: SUCCESS -->
+      <!-- PAGE 2: SUCCESS -->
       <div id="page-success" class="page-view">
         <div class="success-screen">
           <div class="check-circle"><i class="fas fa-check"></i></div>
           <h2>Payment Successful!</h2>
-          <p>Your tickets have been confirmed and sent to your email.</p>
+          <p>Your tickets have been confirmed.</p>
           <div class="summary-card" id="successSummary" style="text-align:left;"></div>
           <button class="book-btn" onclick="resetFlow()">BOOK MORE TICKETS</button>
         </div>
       </div>
     </div>
-    <!-- END TICKETING FLOW -->
+    <!-- END TICKETING SECTION -->
 
     <section class="register" id="register">
       <div class="register-copy">
@@ -652,9 +631,9 @@
   </main>
 </div>
 
-<!-- =========================================
-     JAVASCRIPT FOR TICKETING & FORMS
-     ========================================= -->
+<!-- Paystack Inline JS -->
+<script src="https://js.paystack.co/v1/inline.js"></script>
+
 <script>
   // --- TICKETING DATA ---
   const TICKET_TYPES = [
@@ -672,11 +651,13 @@
 
   const state = {
     quantities: {},
-    customer: { name: '', email: '', phone: '' },
-    paymentMethod: 'M-Pesa'
+    customer: { name: '', email: '', phone: '', idNumber: '' }
   };
 
   TICKET_TYPES.forEach(t => { state.quantities[t.id] = 0; });
+
+  // PAYSTACK PUBLIC KEY (test)
+  const PAYSTACK_PUBLIC_KEY = 'pk_test_3051b717913ccef6d5e8b07a7f51bed5710c57e2';
 
   function formatKES(amount) {
     return 'KES ' + amount.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -765,7 +746,7 @@
       list.appendChild(row);
     });
 
-    updateProceedButton();
+    updatePaystackButton();
   }
 
   function changeQty(ticketId, delta) {
@@ -780,11 +761,15 @@
     renderTickets();
   }
 
-  function updateProceedButton() {
+  function updatePaystackButton() {
     const total = getSelectedItems().reduce((s, i) => s + i.qty, 0);
-    const btn = document.getElementById('proceedBtn');
+    const btn = document.getElementById('paystackBtn');
     btn.disabled = total === 0;
-    btn.textContent = total === 0 ? 'BOOK TICKETS' : `BOOK ${total} TICKET${total > 1 ? 'S' : ''} · ${formatKES(getGrandTotal())}`;
+    if (total === 0) {
+      btn.innerHTML = '<i class="fas fa-lock"></i> PAY WITH PAYSTACK';
+    } else {
+      btn.innerHTML = `<i class="fas fa-lock"></i> PAY ${formatKES(getGrandTotal())} WITH PAYSTACK`;
+    }
   }
 
   function buildSummaryHTML() {
@@ -798,115 +783,119 @@
     return html;
   }
 
-  document.getElementById('proceedBtn').addEventListener('click', () => {
-    if (getSelectedItems().length === 0) return;
-    document.getElementById('detailsSummary').innerHTML = buildSummaryHTML();
-    goToPage('details');
-  });
-
-  document.getElementById('detailsForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const name = document.getElementById('fullName').value.trim();
-    const email = document.getElementById('email').value.trim();
-    const phone = document.getElementById('phone').value.trim();
-
-    let valid = true;
-    document.getElementById('err-name').classList.remove('show');
-    document.getElementById('err-email').classList.remove('show');
-    document.getElementById('err-phone').classList.remove('show');
-
-    if (name.length < 2) { document.getElementById('err-name').classList.add('show'); valid = false; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { document.getElementById('err-email').classList.add('show'); valid = false; }
-    if (phone.replace(/\D/g, '').length < 9) { document.getElementById('err-phone').classList.add('show'); valid = false; }
-    if (!valid) return;
-
-    state.customer = { name, email, phone };
-    document.getElementById('checkoutSummary').innerHTML = buildSummaryHTML();
-    goToPage('checkout');
-  });
-
-  function selectPayment(el) {
-    document.querySelectorAll('.payment-option').forEach(p => p.classList.remove('selected'));
-    el.classList.add('selected');
-    state.paymentMethod = el.dataset.method;
+  // Clear validation styles
+  function clearValidation() {
+    ['fullName', 'phone', 'idNumber', 'email'].forEach(id => {
+      document.getElementById(id).classList.remove('invalid');
+    });
+    ['err-name', 'err-phone', 'err-id', 'err-email'].forEach(id => {
+      document.getElementById(id).classList.remove('show');
+    });
   }
 
-  // =========================================
-  // PAYSTACK INLINE INTEGRATION
-  // =========================================
+  // Validate customer details: name, phone, ID required; email optional (but must be valid if provided)
+  function validateCustomerDetails() {
+    clearValidation();
+    let valid = true;
 
-  // ⚠️ REPLACE THIS WITH YOUR ACTUAL PAYSTACK PUBLIC KEY
-  // Use 'pk_test_...' for testing, 'pk_live_...' for production
-  const PAYSTACK_PUBLIC_KEY = 'pk_test_3051b717913ccef6d5e8b07a7f51bed5710c57e2';
+    const name = document.getElementById('fullName').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const idNumber = document.getElementById('idNumber').value.trim();
+    const email = document.getElementById('email').value.trim();
 
-  function completePurchase() {
-    const btn = document.getElementById('payBtn');
+    if (name.length < 2) {
+      document.getElementById('fullName').classList.add('invalid');
+      document.getElementById('err-name').classList.add('show');
+      valid = false;
+    }
+
+    if (phone.replace(/\D/g, '').length < 9) {
+      document.getElementById('phone').classList.add('invalid');
+      document.getElementById('err-phone').classList.add('show');
+      valid = false;
+    }
+
+    if (idNumber.length < 3) {
+      document.getElementById('idNumber').classList.add('invalid');
+      document.getElementById('err-id').classList.add('show');
+      valid = false;
+    }
+
+    // Email optional – only validate if provided
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      document.getElementById('email').classList.add('invalid');
+      document.getElementById('err-email').classList.add('show');
+      valid = false;
+    }
+
+    if (valid) {
+      state.customer.name = name;
+      state.customer.phone = phone;
+      state.customer.idNumber = idNumber;
+      state.customer.email = email;
+    }
+
+    return valid;
+  }
+
+  // --- PAYSTACK INTEGRATION ---
+  document.getElementById('paystackBtn').addEventListener('click', function() {
     const items = getSelectedItems();
+    if (items.length === 0) return;
 
-    if (items.length === 0) {
-      alert('No tickets selected.');
+    // Validate required details (name, phone, ID); email optional
+    if (!validateCustomerDetails()) {
       return;
     }
 
-    // Paystack expects amount in the smallest currency unit (cents for KES)
-    const amountInCents = Math.round(getGrandTotal() * 100);
-    const customerEmail = state.customer.email;
+    const totalKobo = Math.round(getGrandTotal() * 100); // Paystack uses kobo (lowest currency unit)
 
-    if (!customerEmail) {
-      alert('Please go back and enter your email address.');
-      return;
-    }
+    // Build a reference and metadata with ticket details
+    const reference = 'GUSIIFEST-' + Date.now() + '-' + Math.floor(Math.random() * 1e6);
+    const ticketDescription = items.map(i => `${i.title} x${i.qty}`).join(' | ');
 
-    // If customer chose Cash, skip Paystack and just confirm reservation
-    if (state.paymentMethod === 'Cash') {
-      document.getElementById('successSummary').innerHTML = buildSummaryHTML();
-      goToPage('success');
-      return;
-    }
+    // Paystack requires an email. Since email is optional, fall back to a placeholder.
+    const paystackEmail = state.customer.email || 'customer@gusiifest.com';
 
-    btn.disabled = true;
-    btn.textContent = 'PROCESSING…';
+    // Build metadata custom fields
+    const customFields = [
+      { display_name: 'Order', variable_name: 'order', value: ticketDescription },
+      { display_name: 'Customer Name', variable_name: 'customer_name', value: state.customer.name },
+      { display_name: 'Phone', variable_name: 'phone', value: state.customer.phone },
+      { display_name: 'ID Number', variable_name: 'id_number', value: state.customer.idNumber }
+    ];
 
     const handler = PaystackPop.setup({
       key: PAYSTACK_PUBLIC_KEY,
-      email: customerEmail,
-      amount: amountInCents,
+      email: paystackEmail,
+      amount: totalKobo,
       currency: 'KES',
-      ref: 'GUSIIFEST_' + Date.now() + '_' + Math.floor(Math.random() * 100000),
+      ref: reference,
       metadata: {
-        custom_fields: [
-          { display_name: 'Customer Name',  variable_name: 'customer_name', value: state.customer.name },
-          { display_name: 'Phone Number',   variable_name: 'phone',         value: state.customer.phone },
-          { display_name: 'Payment Method', variable_name: 'method',        value: state.paymentMethod }
-        ]
+        custom_fields: customFields
       },
-      callback: function (response) {
-        // Payment successful on Paystack
+      callback: function(response) {
+        // Payment successful – show success screen
         document.getElementById('successSummary').innerHTML = buildSummaryHTML();
         goToPage('success');
-        btn.disabled = false;
-        btn.textContent = 'PAY NOW';
-
-        // Log reference for records / backend verification
-        console.log('Paystack reference:', response.reference);
-
-        // TODO (recommended): send response.reference to your backend
-        // to verify via https://api.paystack.co/transaction/verify/:reference
-        // using your SECRET KEY before trusting the payment.
       },
-      onClose: function () {
-        btn.disabled = false;
-        btn.textContent = 'PAY NOW';
+      onClose: function() {
+        // User closed the Paystack modal
+        alert('Payment window closed. You can try again whenever you are ready.');
       }
     });
 
     handler.openIframe();
-  }
+  });
 
   function resetFlow() {
     TICKET_TYPES.forEach(t => { state.quantities[t.id] = 0; });
-    state.customer = { name: '', email: '', phone: '' };
-    document.getElementById('detailsForm').reset();
+    state.customer = { name: '', email: '', phone: '', idNumber: '' };
+    document.getElementById('fullName').value = '';
+    document.getElementById('phone').value = '';
+    document.getElementById('idNumber').value = '';
+    document.getElementById('email').value = '';
+    clearValidation();
     renderTickets();
     goToPage('tickets');
   }
@@ -944,6 +933,7 @@
     button.textContent = "SAVING...";
 
     try {
+      // Simulating API call for demo purposes
       await new Promise(resolve => setTimeout(resolve, 1000));
       e.target.reset();
       message.textContent = "You're on the list. We'll keep you updated.";
