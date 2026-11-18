@@ -651,14 +651,16 @@
      JAVASCRIPT FOR TICKETING & FORMS
      ========================================= -->
 <script>
-  // --- TICKETING DATA & LOGIC ---
+  // --- TICKETING DATA (UPDATED WITH YOUR EXACT PRICES AND AVAILABILITY) ---
   const TICKET_TYPES = [
-    { id: 'early-bird-2026', title: '31st December 2026 · Early Bird', price: 500, soldOut: false, extra: 'Available 27 Aug – 30 Nov 2026' },
-    { id: 'early-bird-2027', title: '1st January 2027 · Early Bird', price: 600, soldOut: false, extra: 'Available 05 Aug – 30 Nov 2026' },
-    { id: 'vip-2026', title: '31st December 2026 · VIP', price: 5000, soldOut: false, extra: 'Available 01 Oct – 01 Nov 2026' },
+    { id: 'eb-2026', title: '31st December 2026 · Early Bird', price: 500, soldOut: false, extra: 'Available 27 Aug 2026 – 30 Nov 2026' },
+    { id: 'eb-2027', title: '1st January 2027 · Early Bird', price: 500, soldOut: false, extra: 'Available 05 Aug 2026 – 30 Nov 2026' },
+    { id: 'reg-2026', title: '31st December 2026 · Regular', price: 1500, soldOut: false, extra: '' },
+    { id: 'reg-2027', title: '1st January 2027 · Regular', price: 1500, soldOut: false, extra: '' },
+    { id: 'vip-2026', title: '31st December 2026 · VIP', price: 5000, soldOut: false, extra: 'Available 01 Oct 2026 – 01 Nov 2026' },
     { id: 'vip-2027', title: '1st January 2027 · VIP', price: 5000, soldOut: false, extra: '' },
-    { id: 'vvip-2027-a', title: '31st December 2027 · VVIP', price: 12000, soldOut: false, extra: '' },
-    { id: 'vvip-2027-b', title: '1st January 2027 · VVIP', price: 12000, soldOut: false, extra: '' },
+    { id: 'vvip-2026', title: '31st December 2026 · VVIP', price: 12000, soldOut: false, extra: '' },
+    { id: 'vvip-2027', title: '1st January 2027 · VVIP', price: 12000, soldOut: false, extra: '' },
     { id: 'table-2026', title: 'VVIP TABLE OF 4 · 31st December 2026', price: 45000, soldOut: false, extra: '' },
     { id: 'table-2027', title: 'VVIP TABLE OF 4 · 1st January 2027', price: 45000, soldOut: false, extra: '' }
   ];
@@ -708,11 +710,22 @@
 
       const sub = document.createElement('div');
       sub.className = 'ticket-sub';
+      
+      if (ticket.soldOut) {
+        const badge = document.createElement('span');
+        badge.style.color = '#ff6b6b';
+        badge.style.fontWeight = '900';
+        badge.style.fontSize = '0.75rem';
+        badge.textContent = 'SOLD OUT / EXPIRED';
+        sub.appendChild(badge);
+      }
+      
       if (ticket.extra) {
         const extra = document.createElement('span');
         extra.textContent = ticket.extra;
         sub.appendChild(extra);
       }
+      
       const priceTag = document.createElement('span');
       priceTag.className = 'price-tag';
       priceTag.textContent = formatKES(ticket.price);
@@ -726,7 +739,7 @@
       const minusBtn = document.createElement('button');
       minusBtn.className = 'qty-btn';
       minusBtn.innerHTML = '<i class="fas fa-minus"></i>';
-      minusBtn.disabled = qty === 0;
+      minusBtn.disabled = ticket.soldOut || qty === 0;
       minusBtn.onclick = () => changeQty(ticket.id, -1);
 
       const qtyNum = document.createElement('span');
@@ -734,8 +747,9 @@
       qtyNum.textContent = qty;
 
       const plusBtn = document.createElement('button');
-      plusBtn.className = 'qty-btn plus-red';
+      plusBtn.className = 'qty-btn' + (!ticket.soldOut ? ' plus-red' : '');
       plusBtn.innerHTML = '<i class="fas fa-plus"></i>';
+      plusBtn.disabled = ticket.soldOut;
       plusBtn.onclick = () => changeQty(ticket.id, 1);
 
       qtyControl.appendChild(minusBtn);
@@ -750,6 +764,9 @@
   }
 
   function changeQty(ticketId, delta) {
+    const ticket = TICKET_TYPES.find(t => t.id === ticketId);
+    if (!ticket || ticket.soldOut) return;
+    
     const current = state.quantities[ticketId] || 0;
     const next = current + delta;
     if (next < 0) return;
