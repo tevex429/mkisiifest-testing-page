@@ -656,8 +656,8 @@
 
   TICKET_TYPES.forEach(t => { state.quantities[t.id] = 0; });
 
-  // PAYSTACK PUBLIC KEY (test)
-  const PAYSTACK_PUBLIC_KEY = 'pk_test_3051b717913ccef6d5e8b07a7f51bed5710c57e2';
+  // PAYSTACK PUBLIC KEY (live)
+  const PAYSTACK_PUBLIC_KEY = 'pk_live_71206ca4c63c7316305e5b9eb2d88bdd90b7b889';
 
   function formatKES(amount) {
     return 'KES ' + amount.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
